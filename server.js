@@ -1,14 +1,29 @@
 var imageSearch = require('node-google-image-search')
-// console.log(results)
 
 var express = require('express')
 var app = express()
 
+var mongourl = process.env.MONGOLAB_URI
+var mongoose = require('mongoose')
+var query_schema = new mongoose.Schema({term: String, when: { type: Date, default: Date.now }})
+
+// static html showing info about the app
+app.use(express.static('public'))
+
+// search path handling
 app.get('/imagesearch/:term', function(req, res){
   var query = req.params.term
+  
+  // save query history to database
+  var connection = mongoose.createConnection(mongourl)
+  var Query = connection.model('Query', query_schema, 'image_queries')
+  Query.create({term: query}, function(err, img_query){
+    if(err) return console.error(err)
+  })
+  
+  // search for images
   var offset = req.query.offset
   if(!offset) offset = 1
-  console.log(offset)
   var results = imageSearch(query, function(results){
     var response = ''
     results.forEach(function(result){
