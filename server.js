@@ -39,6 +39,27 @@ app.get('/imagesearch/:term', function(req, res){
   }, offset, 10)
 })
 
+// latest queries path
+app.get('/latest/', function(req, res){
+  
+  // save query history to database
+  var connection = mongoose.createConnection(mongourl)
+  var Query = connection.model('Query', query_schema, 'image_queries')
+  Query.find().limit(10).sort('-when').select('term when').
+  exec(function(error,results){
+    if(error) return console.error(error)
+    var response = ''
+    results.forEach(function(item){
+      var retObj = {
+        term: item.term,
+        when: item.when
+      }
+      response += JSON.stringify(retObj,null,2) + '\n'
+    })
+    res.end(response)
+  })
+})
+
 var port = process.env.PORT || 8080
 app.listen(port, function () {
   console.log('Image search app listening on port ' + port + '!')
